@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { Brain, Layers, Gamepad2, FileText } from 'lucide-react';
+import { Brain, Layers, Gamepad2, FileText, Swords } from 'lucide-react';
 import { NNVisualizer } from './features/nn-visualizer/NNVisualizer';
 import { ArchVisualizer } from './features/arch-visualizer/ArchVisualizer';
 import { RLPlayground } from './features/rl-playground/RLPlayground';
 import { PaperExplorer } from './features/paper-explorer/PaperExplorer';
+import { FightClub } from './features/fight-club/FightClub';
 
 const tabs = [
   { id: 'nn', label: 'Neural Network', icon: Brain },
   { id: 'arch', label: 'Architecture', icon: Layers },
   { id: 'rl', label: 'RL Playground', icon: Gamepad2 },
+  { id: 'fight', label: 'Fight Club', icon: Swords },
   { id: 'paper', label: 'Paper Explorer', icon: FileText },
 ] as const;
 
@@ -47,6 +49,7 @@ export default function App() {
         {activeTab === 'nn' && <NNVisualizer />}
         {activeTab === 'arch' && <ArchVisualizer />}
         {activeTab === 'rl' && <RLPlayground />}
+        {activeTab === 'fight' && <FightClub />}
         {activeTab === 'paper' && <PaperExplorer />}
       </main>
     </div>
