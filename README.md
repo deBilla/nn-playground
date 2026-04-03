@@ -13,6 +13,8 @@ An interactive web application for visualizing and understanding neural networks
   - [1. Neural Network Visualizer](#1-neural-network-visualizer)
   - [2. Architecture Visualizer](#2-architecture-visualizer)
   - [3. Reinforcement Learning Playground](#3-reinforcement-learning-playground)
+  - [4. Robot Fight Club](#4-robot-fight-club)
+  - [5. Paper Explorer](#5-paper-explorer)
 - [How It Works Under the Hood](#how-it-works-under-the-hood)
   - [Neural Network Engine](#neural-network-engine)
   - [Reinforcement Learning Engine](#reinforcement-learning-engine)
@@ -32,6 +34,8 @@ NN Playground is split into three interactive sections, each targeting a differe
 | **Neural Network** | How networks learn to classify data | Real backpropagation training on toy 2D datasets |
 | **Architecture** | How model layers stack together | Shape inference, parameter counting, layer types |
 | **RL Playground** | How agents learn from rewards | Real Q-learning/SARSA on an interactive grid world |
+| **Fight Club** | Multi-agent RL, emergent behavior | Two Q-learning robots learn combat from scratch |
+| **Paper Explorer** | AI-powered paper understanding | Upload a PDF, get interactive visualizations via LLM |
 
 Everything runs client-side. The neural network math is implemented from scratch in ~200 lines of TypeScript — no TensorFlow, no PyTorch, no external ML dependencies.
 
@@ -225,6 +229,80 @@ Try running Q-Learning for ~200 episodes, then switch to SARSA and reset the age
 
 ---
 
+### 4. Robot Fight Club
+
+Two Q-learning robots fight in a 2D arena and learn combat strategies from scratch through trial and error. This demonstrates multi-agent RL where both agents learn simultaneously — creating an arms race of evolving strategies.
+
+#### Combat system
+
+- **6 actions per robot**: move left/right, punch (close range, 10 dmg, fast), kick (longer range, 15 dmg, slow), block (80% damage reduction), dodge (quick backstep)
+- 100 HP per robot, cooldowns on attacks, stun on hit, knockback physics
+- Simultaneous action resolution — no first-mover advantage
+- Damage numbers float up on hits
+
+#### Training phases
+
+| Preset | Epsilon | Alpha | Gamma | Speed | Purpose |
+|--------|---------|-------|-------|-------|---------|
+| **Learn Fast** | 0.5 | 0.2 | 0.9 | 1000 | High exploration, discover basic moves |
+| **Refine** | 0.1 | 0.1 | 0.95 | 1000 | Less exploration, optimize strategies |
+| **Showtime** | 0.02 | 0.05 | 0.95 | 1 | Watch trained robots fight in slow motion |
+
+#### Expert pre-training (imitation learning)
+
+Toggle "Start with expert knowledge" to pre-fill Q-tables with 300 episodes of expert-vs-expert play using a hardcoded heuristic (block when attacked, punch when close, kick at medium range). The robots start competent from round 1, then RL improves beyond the expert.
+
+#### Showtime mode
+
+When Showtime is active:
+- **Match scoreboard** on the canvas shows hits landed per robot for the current fight
+- **Big HP bars** for both fighters
+- **2000 max steps** per round (vs 500 during training) for longer, more exciting matches
+- **Betting panel** appears on the right sidebar — add bets with names, pick Red/Blue, set amounts. Bets settle automatically when the round ends (winners get their amount, losers lose it, draws return bets)
+- **Screen recording** — click the Rec button to record the fight as a `.webm` video
+
+#### What the robots learn
+
+- Early rounds (~0-50): Random flailing, accidental hits
+- Mid training (~50-500): Discover that closing distance + punching works, start blocking
+- Late training (~500-2000): Combo patterns emerge — approach, feint, counter-attack, dodge-and-punish
+- The two agents develop complementary strategies in an adversarial arms race
+
+---
+
+### 5. Paper Explorer
+
+Upload a research paper (PDF) and get AI-generated interactive visualizations, step-by-step explanations, and quizzes. The AI reads the paper, identifies key findings, and creates visualizations automatically.
+
+#### AI Providers
+
+| Provider | Cost | Notes |
+|----------|------|-------|
+| **Browser AI (WebLLM)** | Free | Runs Phi-3.5-mini locally via WebGPU (~1.5GB download, cached) |
+| **OpenRouter** | Varies | 200+ models with one API key |
+| **Gemini** | Free tier | Google's Gemini 2.0 Flash |
+| **Claude** | Paid | Best quality analysis |
+| **OpenAI** | Paid | GPT-4o-mini |
+| **Custom endpoint** | - | Ollama, vLLM, LM Studio, or any OpenAI-compatible API |
+
+#### What it generates
+
+For each paper, the AI creates 4-8 sections, each with:
+
+- **Visualization** — auto-selected from 6 types: architecture diagram, comparison chart, line/bar chart, flowchart, data table, timeline
+- **Key insight** — one-sentence takeaway highlighted in amber
+- **Interactive elements** — toggles, steppers to walk through processes
+- **Quiz question** — multiple choice with explanation
+- **Glossary** — key terms defined in the sidebar
+
+#### Progress tracking
+
+- Section completion tracked with progress bar
+- Quiz scores tracked across sections
+- Navigate freely between sections or follow the guided order
+
+---
+
 ## How It Works Under the Hood
 
 ### Neural Network Engine
@@ -397,8 +475,10 @@ src/
 | Tailwind CSS 4 | Utility-first styling |
 | Zustand | State management |
 | Lucide React | Icons |
+| pdfjs-dist | PDF text extraction |
+| @mlc-ai/web-llm | In-browser LLM (WebGPU) |
 
-**Zero ML dependencies.** All neural network math (matrix operations, backpropagation, activation functions) and RL algorithms (Q-learning, SARSA) are implemented from scratch.
+**Core ML from scratch.** All neural network math (matrix operations, backpropagation, activation functions) and RL algorithms (Q-learning, SARSA) are implemented from scratch. The Paper Explorer uses `pdfjs-dist` for PDF parsing and optionally `@mlc-ai/web-llm` for in-browser LLM inference.
 
 ---
 

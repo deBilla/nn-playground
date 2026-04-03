@@ -12,6 +12,8 @@ export interface StepResult {
   blueReward: number;
   roundOver: boolean;
   winner: 'red' | 'blue' | 'draw' | null;
+  redLanded: boolean;
+  blueLanded: boolean;
 }
 
 // Both fighters resolve blocks FIRST, then check damage against updated block state
@@ -190,7 +192,7 @@ export function stepArena(red: FighterState, blue: FighterState, redAction: Acti
   red.roundReward += redReward;
   blue.roundReward += blueReward;
 
-  return { redReward, blueReward, roundOver, winner };
+  return { redReward, blueReward, roundOver, winner, redLanded: redDamage > 0, blueLanded: blueDamage > 0 };
 }
 
 export function resetRound(red: FighterState, blue: FighterState) {
