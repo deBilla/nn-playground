@@ -176,12 +176,59 @@ function useOpenRouter() {
   }, []);
 }
 
+function useCustomEndpoint() {
+  return useCallback(async (text: string, apiKey: string, onProgress: ProgressCallback): Promise<string> => {
+    const config = loadCustomConfig();
+    onProgress(`Sending to ${config.baseUrl}...`);
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
+    const res = await fetch(`${config.baseUrl.replace(/\/+$/, '')}/v1/chat/completions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: config.model,
+        max_tokens: 8000,
+        temperature: 0.1,
+        messages: [{ role: 'user', content: buildAnalysisPrompt(text) }],
+      }),
+    });
+    if (!res.ok) throw new Error(`Custom API error: ${res.status} ${await res.text()}`);
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || '';
+  }, []);
+}
+
+const CUSTOM_CONFIG_KEY = 'nn-playground-custom-llm';
+
+export interface CustomLLMConfig {
+  baseUrl: string;
+  model: string;
+}
+
+function loadCustomConfig(): CustomLLMConfig {
+  try {
+    const stored = localStorage.getItem(CUSTOM_CONFIG_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return { baseUrl: 'http://localhost:11434', model: 'llama3.2' };
+}
+
+export function saveCustomConfig(config: CustomLLMConfig) {
+  try { localStorage.setItem(CUSTOM_CONFIG_KEY, JSON.stringify(config)); } catch {}
+}
+
+export function getCustomConfig(): CustomLLMConfig {
+  return loadCustomConfig();
+}
+
 export function useLLM() {
   const webllm = useWebLLM();
   const claude = useClaude();
   const openai = useOpenAI();
   const gemini = useGemini();
   const openrouter = useOpenRouter();
+  const custom = useCustomEndpoint();
   const abortRef = useRef<AbortController | null>(null);
 
   const generate = useCallback(async (
@@ -198,9 +245,10 @@ export function useLLM() {
       case 'openai': return openai(text, apiKey, onProgress);
       case 'gemini': return gemini(text, apiKey, onProgress);
       case 'openrouter': return openrouter(text, apiKey, onProgress);
+      case 'custom': return custom(text, apiKey, onProgress);
       default: throw new Error(`Unknown provider: ${provider}`);
     }
-  }, [webllm, claude, openai, gemini, openrouter]);
+  }, [webllm, claude, openai, gemini, openrouter, custom]);
 
   const cancel = useCallback(() => {
     abortRef.current?.abort();

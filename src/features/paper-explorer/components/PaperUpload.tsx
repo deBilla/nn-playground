@@ -1,14 +1,16 @@
 import { useState, useRef } from 'react';
-import { Upload, FileText, Cpu, Cloud, AlertTriangle, Globe } from 'lucide-react';
+import { Upload, FileText, Cpu, Cloud, AlertTriangle, Globe, Server } from 'lucide-react';
 import { usePaperStore } from '../stores/paperStore';
 import { usePaperAnalysis } from '../hooks/usePaperAnalysis';
-import { useWebGPUSupported, clearWebLLMCache } from '../hooks/useLLM';
+import { useWebGPUSupported, clearWebLLMCache, getCustomConfig, saveCustomConfig } from '../hooks/useLLM';
 import type { LLMProvider } from '../lib/types';
 
 export function PaperUpload() {
   const { llmProvider, apiKey, setLLMConfig, error } = usePaperStore();
   const { analyze } = usePaperAnalysis();
   const [dragging, setDragging] = useState(false);
+  const [customUrl, setCustomUrl] = useState(() => getCustomConfig().baseUrl);
+  const [customModel, setCustomModel] = useState(() => getCustomConfig().model);
   const fileRef = useRef<HTMLInputElement>(null);
   const hasWebGPU = useWebGPUSupported();
 
@@ -80,6 +82,7 @@ export function PaperUpload() {
               { id: 'gemini' as LLMProvider, label: 'Gemini', icon: Cloud, desc: 'Free tier available' },
               { id: 'claude' as LLMProvider, label: 'Claude', icon: Cloud, desc: 'Best quality' },
               { id: 'openai' as LLMProvider, label: 'OpenAI', icon: Cloud, desc: 'API key needed' },
+              { id: 'custom' as LLMProvider, label: 'Custom', icon: Server, desc: 'Ollama, vLLM, etc.' },
             ]).map(p => (
               <button key={p.id} onClick={() => setLLMConfig(p.id, apiKey)}
                 style={{
@@ -140,6 +143,56 @@ export function PaperUpload() {
               <p style={{ fontSize: '10px', color: '#475569', marginTop: '4px' }}>
                 Stored locally in your browser. Never sent anywhere except the API.
               </p>
+            </div>
+          )}
+
+          {llmProvider === 'custom' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>
+                  Base URL (OpenAI-compatible endpoint)
+                </label>
+                <input type="text" value={customUrl}
+                  onChange={e => { setCustomUrl(e.target.value); saveCustomConfig({ baseUrl: e.target.value, model: customModel }); }}
+                  placeholder="http://localhost:11434"
+                  style={{
+                    width: '100%', padding: '8px 12px', borderRadius: '6px', fontSize: '12px',
+                    background: '#0f172a', border: '1px solid #334155', color: '#e2e8f0',
+                    outline: 'none', boxSizing: 'border-box',
+                  }} />
+                <p style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>
+                  The app will call <span style={{ color: '#94a3b8', fontFamily: 'monospace' }}>{customUrl.replace(/\/+$/, '')}/v1/chat/completions</span>
+                </p>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>
+                  Model name
+                </label>
+                <input type="text" value={customModel}
+                  onChange={e => { setCustomModel(e.target.value); saveCustomConfig({ baseUrl: customUrl, model: e.target.value }); }}
+                  placeholder="llama3.2"
+                  style={{
+                    width: '100%', padding: '8px 12px', borderRadius: '6px', fontSize: '12px',
+                    background: '#0f172a', border: '1px solid #334155', color: '#e2e8f0',
+                    outline: 'none', boxSizing: 'border-box',
+                  }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>
+                  API Key (optional — leave empty for local servers)
+                </label>
+                <input type="password" value={apiKey}
+                  onChange={e => setLLMConfig(llmProvider, e.target.value)}
+                  placeholder="Optional"
+                  style={{
+                    width: '100%', padding: '8px 12px', borderRadius: '6px', fontSize: '12px',
+                    background: '#0f172a', border: '1px solid #334155', color: '#e2e8f0',
+                    outline: 'none', boxSizing: 'border-box',
+                  }} />
+              </div>
+              <div style={{ fontSize: '10px', color: '#475569', lineHeight: 1.5 }}>
+                <p>Works with any OpenAI-compatible API: <strong style={{ color: '#94a3b8' }}>Ollama</strong>, <strong style={{ color: '#94a3b8' }}>vLLM</strong>, <strong style={{ color: '#94a3b8' }}>LM Studio</strong>, <strong style={{ color: '#94a3b8' }}>llama.cpp server</strong>, <strong style={{ color: '#94a3b8' }}>text-generation-webui</strong>, or any custom deployment.</p>
+              </div>
             </div>
           )}
         </div>

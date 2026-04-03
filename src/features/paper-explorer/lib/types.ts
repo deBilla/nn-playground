@@ -83,4 +83,4 @@ export interface GlossaryEntry {
   definition: string;
 }
 
-export type LLMProvider = 'webllm' | 'claude' | 'openai' | 'gemini' | 'openrouter';
+export type LLMProvider = 'webllm' | 'claude' | 'openai' | 'gemini' | 'openrouter' | 'custom';
