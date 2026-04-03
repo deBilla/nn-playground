@@ -5,4 +5,5 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   base: '/nn-playground/',
   plugins: [react(), tailwindcss()],
+  build: { chunkSizeWarningLimit: 7000 },
 })
